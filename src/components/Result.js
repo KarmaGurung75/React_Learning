@@ -1,5 +1,3 @@
-import { PromiseProvider } from "mongoose";
-
 
 const Result = (props) => {
     const {good, neutral, bad} = props
