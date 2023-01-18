@@ -1,31 +1,89 @@
-import { useState } from "react";
-import Feedback from "./components/Feedback";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-import History from "./components/history";
+function App() {
+  const [notes, setNotes] = useState([]);
+  const [newNote, setNewNote] = useState("");
+  const [showAll, setShowAll] = useState(true);
 
-function App({ name, age }) {
-    
-    const [counter, setCounter] = useState(0)
+  useEffect(() => {
+    axios
+      .get("http://localhost:3001/notes")
+      .then((response) => {
+        console.log(response);
+        setNotes(response.data);
+      })
+      .catch((err) => console.log(err));
+  }, []);
 
-    setTimeout(() => setCounter(counter + 1), 1000);
+  const notesToShow = showAll
+    ? notes
+    : notes.filter((n) => n.important === true);
 
-    console.log(`Rendering ${counter}...`);
-    
-    const handlePlus = () => {
-        setCounter(counter + 1)
+  const handleInputChange = (event) => {
+    console.log(event.target.value);
+    setNewNote(event.target.value);
+  };
+
+  const handleAdd = (event) => {
+    event.preventDefault();
+
+    // Create a new note
+    const note = {
+      content: newNote,
+      date: new Date().toString(),
+      import: Math.random() < 0.5,
+    };
+    if (newNote !== "") {
+      axios
+        .post("http://localhost:3001/notes", note)
+        .then((response) => {
+          console.log(response);
+          setNotes(notes.concat(response.data));
+          setNewNote("");
+        })
+        .catch((err) => console.log(err));
     }
-    return (
-            <div class ="bg-blue-900 h-screen">
-            <h2>Hello {name}, you are {age} years old.</h2>
-            <h2>{counter}</h2>
-            <button onClick={handlePlus}>plus</button>
-            <button onClick={handlePlus}>plus</button> 
+  };
 
-            calling the other class
-            <Feedback/> 
+  const handleDelete = (id) => {
+    window.confirm(`Do you really want to delete??????????????`);
+    axios
+      .delete(`http://localhost:3001/notes/${id}`)
+      .then((response) => {
+        console.log(response);
+        setNotes(notes.filter((note) => note.id !== id));
+      }, [])
+      .catch((err) => console.log(err));
+  };
 
-            <History/>
-            </div>
-        );   
+  const label = notes.important ? "Remove from important" : "Make Important";
+  const handleImportant = (id) => {
+    window.confirm(`Do you want to ${label}?`);
+  };
+
+  return (
+    <>
+      <h2>Notes</h2>
+      <button onClick={() => setShowAll(!showAll)}>
+        {showAll ? "Show important" : "show All"}
+      </button>
+      <ul>
+        {notes &&
+          notesToShow.map((note) => (
+            <li key={note.id}>
+              <p>{note.content}</p>
+              <p>{note.date}</p>
+              <button onClick={() => handleDelete(note.id)}>Delete</button>
+              <button onClick={() => handleImportant(note.id)}>{label}</button>
+            </li>
+          ))}
+      </ul>
+      <form>
+        <input value={newNote} onChange={handleInputChange}></input>
+        <button onClick={handleAdd}>add</button>
+      </form>
+    </>
+  );
 }
 export default App;
